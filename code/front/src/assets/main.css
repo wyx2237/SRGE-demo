@@ -1,0 +1,22 @@
+@import './base.css';
+
+/*
+  NOTE:
+  This project is an "admin layout" style app.
+  The default Vue template styles (centered body, max-width app container, grid columns)
+  break full-screen layouts and look especially awkward in dark mode.
+*/
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+#app {
+  width: 100%;
+}

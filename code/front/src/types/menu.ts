@@ -1,0 +1,17 @@
+export type IMenuType = 'directory' | 'menu' | 'button'
+
+export interface IMenuItem {
+  id: string
+  type: IMenuType // 菜单类型：directory(目录)、menu(菜单)、button(按钮)
+  path: string // 路由路径（directory和button可以为空）
+  title: string
+  icon: string
+  parentId: string | null
+  order: number
+  status: 'active' | 'inactive'
+  permission: string // 权限标识（主要用于button类型）
+  isBuiltIn?: boolean // 是否为内置菜单
+  createTime?: string
+  updateTime?: string
+  children?: IMenuItem[]
+}
