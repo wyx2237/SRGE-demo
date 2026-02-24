@@ -155,7 +155,7 @@ const navigation = (path: string) => {
 
 // 关闭标签页
 const handleClose = (item: TabItem) => {
-  tabsStore.removeTab(item.path)
+  // tabsStore.removeTab(item.path)
   router.push(tabsStore.activePath)
   scrollToActiveTab()
 }

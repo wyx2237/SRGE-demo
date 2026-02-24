@@ -39,7 +39,7 @@
         >
           Start Medical Calculation <el-icon class="el-icon--right"><ArrowRight /></el-icon>
         </el-button>
-        <el-button size="large" round class="action-btn sec-btn"> View Documentation </el-button>
+        <el-button size="large" round class="action-btn sec-btn" @click="goToDocumentation"> View Documentation </el-button>
       </div>
     </div>
 
@@ -63,7 +63,7 @@
           <el-icon><MagicStick /></el-icon>
         </div>
         <div class="card-content">
-          <h3>Automated Generation</h3>
+          <h3>Rule Generation</h3>
           <p>
             Transforms natural language clinical requirements into structured, interpretable rule
             definitions, making the logic transparent and easy for experts to validate.
@@ -88,7 +88,7 @@
     <div class="dashboard-footer">
       <span>SRGE v1.0.0</span>
       <span class="divider">|</span>
-      <span>© 2024 Clinical Logic Research Group</span>
+      <span>© 2026 ecustnlplab </span>
     </div>
   </div>
 </template>
@@ -104,6 +104,10 @@ const router = useRouter()
 
 const goToCalculation = () => {
   router.push({ name: 'CalculationView' })
+}
+
+const goToDocumentation = () => {
+  window.open('https://github.com/wyx2237/SRGE-demo', '_blank')
 }
 </script>
 

@@ -2,26 +2,29 @@ from ast import Dict
 from fastapi import APIRouter
 from service.RuleService import RuleService
 from service.CalculationService import CalculationService
-from schema.schema import ResponseBase, WorkflowResponse, CalculationCreate, CalculationTask
+from schema.schema import ResponseBase, RuleGenerateRequest
 from utils.response import ResponseModel
 
 router = APIRouter(prefix="/rule", tags=["Rule"])
 
 @router.post("/generate", response_model=ResponseBase)
-async def generate_rule(question: str, knowledge: str, text: str):
+async def generate_rule(request: RuleGenerateRequest):
     """
     生成计算规则
     
     Args:
-        question: 计算问题描述
-        knowledge: 计算知识补充
-        text: 患者信息文本
+        request: 包含计算问题描述、知识补充和患者信息文本的请求模型
+            question: 计算问题描述
+            knowledge: 计算知识补充
+            text: 患者信息文本
         
     Returns:
         Dict: 包含计算规则的字典
     """
-    calculate_flow_dict = await RuleService.rule_generate(question, knowledge, text)
-    return ResponseModel.generate_success_response(data=calculate_flow_dict)
+    print(request)
+    calculate_flow_dict = await RuleService.rule_generate(request.question, request.knowledge, request.text)
+    
+    return ResponseModel.generate_success_response(data={"structured_rule": calculate_flow_dict})
 
 @router.get("/list", response_model=ResponseBase)
 async def get_rule_list(keyword: str = ""):

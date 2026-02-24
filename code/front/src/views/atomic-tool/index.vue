@@ -5,13 +5,13 @@
     <div class="library-header">
       <div class="header-left">
         <!-- <div class="brand-badge">ATOMIC LIBRARY</div> -->
-        <h1 class="main-title">Atomic Tools</h1>
+        <h1 class="main-title">Atomic Tool Template Library</h1>
         <p class="sub-title">Standardized component repository for logic construction</p>
       </div>
       <div class="header-right">
         <div class="stat-box">
           <span class="stat-num">{{ tools.length }}</span>
-          <span class="stat-label">Units Available</span>
+          <span class="stat-label">Templates Available</span>
         </div>
       </div>
     </div>

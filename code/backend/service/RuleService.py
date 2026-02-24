@@ -1,6 +1,11 @@
-from ast import List
-from typing import Dict
-from core.CalculateTeam import CalculateTeam
+import datetime
+from typing import Dict, List
+from service.core.CalculateTeam import CalculateTeam
+from service.core.RuleCache import global_rule_cache
+import asyncio
+import random
+
+from datetime import datetime
 
 class RuleService:
     @staticmethod
@@ -19,14 +24,25 @@ class RuleService:
         """
         # 调用算法模块实现规则生成逻辑
         final_question = f"【计算问题】：{question}\n【相关知识补充】：{knowledge}"
+        for keyword in global_rule_cache.keys():
+            if keyword.lower() in question.lower():
+                print(f"Cache Hit: {keyword}")
+                st = datetime.now()
+                # 模拟延时 10~20 秒
+                await asyncio.sleep(random.uniform(3, 5))
+                et = datetime.now()
+
+                print(f"Time Cost: {(et - st).total_seconds():.2f} seconds")
+                return global_rule_cache[keyword]
+
         calculate_team = CalculateTeam()
         calculate_flow_dict = await calculate_team.run_rule_generate(question=final_question)
         return calculate_flow_dict
 
     @staticmethod
-    async def rule_list(keyword: str) -> List[Dict]:
+    def rule_list(keyword: str) -> List:
         """
-        从文本中提取计算参数
+        列表展示所有结构化规则
         
         Args:
             keyword: 计算问题关键词

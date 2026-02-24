@@ -8,7 +8,7 @@
         <div class="circle circle-2"></div>
         
         <div class="brand-content">
-          <div class="logo-text">SURGE</div>
+          <div class="logo-text">SRGE</div>
           <div class="brand-divider"></div>
           <div class="brand-desc">
             Intelligent Workflow-based <br>

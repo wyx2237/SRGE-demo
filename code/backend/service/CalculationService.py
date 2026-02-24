@@ -1,4 +1,7 @@
 from service.core.CalculateTeam import CalculateTeam
+from typing import Dict
+
+
 
 class CalculationService:
     @staticmethod
@@ -15,8 +18,12 @@ class CalculationService:
         """
         # 调用算法模块实现参数抽取逻辑
         calculate_team = CalculateTeam()
-        params_dict = await calculate_team.run_params_extract(calculator_problem=question, patient_info=text, input_params=rule.get("inputs"))
-        return params_dict
+        extract_result = await calculate_team.run_params_extract_v2(calculator_problem=question, patient_info=text, input_params=rule.get("inputs"))
+        return {
+            "input_dict": extract_result.get("input_dict", {}),
+            "input_source_list": extract_result.get("input_source_list", []),
+            # "missing": extract_result.get("missing", [])
+        }
 
     @staticmethod
     async def execute_calculation(params: Dict, rule: Dict) -> Dict:
@@ -29,10 +36,12 @@ class CalculationService:
         
         Returns:
             Dict: 包含计算结果的字典
+                final_result: 最终计算结果
+                execution_steps: 计算执行步骤
         """
         result_dict = {}
         # 调用算法模块实现计算逻辑
         calculate_team = CalculateTeam()
-        result_dict = await calculate_team.run_calculate_flow(calculate_flow_dict=rule, input_dict=params)
+        result_dict = calculate_team.run_calculate_flow(calculate_flow_dict=rule, input_dict=params)
         return result_dict
         

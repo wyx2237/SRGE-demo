@@ -280,6 +280,24 @@ const getCategoryColor = (category: string) => {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
+                
+                /* --- 新增/修改以下代码 --- */
+                max-height: 200px;  /* 设置最大高度，你可以根据需要调整这个值，比如 150px 或 250px */
+                overflow-y: auto;   /* 内容超出时显示垂直滚动条 */
+                padding-right: 4px; /* 防止滚动条遮挡内容，增加一点右内边距 */
+
+                /* 美化滚动条 (Chrome/Safari/Edge) */
+                &::-webkit-scrollbar {
+                    width: 4px;
+                }
+                &::-webkit-scrollbar-thumb {
+                    background-color: #cbd5e1;
+                    border-radius: 4px;
+                }
+                &::-webkit-scrollbar-track {
+                    background-color: transparent;
+                }
+                /* ----------------------- */
             }
 
             .empty-flow {
@@ -411,15 +429,18 @@ const getCategoryColor = (category: string) => {
                 color: #94a3b8;
                 font-weight: 600;
                 display: flex;
-                align-items: flex-start;
-                /* Top align for long text */
+                align-items: center; /* vertically center icon and text */
                 gap: 6px;
                 font-size: 0.8rem;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                margin-top: 3px;
-                /* visual alignment with text */
                 flex-shrink: 0;
+
+                .el-icon {
+                    flex-shrink: 0;
+                    font-size: 16px;
+                    line-height: 1;
+                }
             }
 
             .i-value {

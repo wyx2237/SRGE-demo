@@ -27,7 +27,7 @@ def get_parameter_extractor():
 ### 任务说明
 你是一个输入参数抽取专家，你的任务是根据我提供的【计算问题】定义(calculator_problem)和已经分析出来的【输入参数字典】(input_params), 从【病人信息】(patient_info)中抽取所需的所有参数值。
 
-### 输出格式，严格遵循json格式，必须包含 input_dict 和 missing 两个字段，外部以xml标签对封装
+### 输出格式，严格遵循json格式，必须包含 input_dict ，input_source_list 和 missing 三个字段，外部以xml标签对封装
 <json>
 {
     "input_dict": {
@@ -35,6 +35,11 @@ def get_parameter_extractor():
         "参数名称2": "参数值2"
         ...
     }, # 输入参数字典，包含所有参数的名称和实际的值
+    "input_source_list": [
+        { name: '参数名称1', rawValue: '原文表述1', value: 参数值1 },
+        { name: '参数名称2', rawValue: '原文表述2', value: 参数值2 },
+        ...
+    ], # 输入参数字典中所有参数的原文表述和实际值
     "missing": [...] # 缺失参数列表，必须保证为空列表；如果非空，则仔细反思抽取过程，补充缺失参数
 }
 </json>
@@ -45,6 +50,7 @@ def get_parameter_extractor():
 2. 所有boolean类型的抽取参数的抽取结果，请统一输出true或false，不要输出其他形式的表示。
 3. 第一次抽取完成后，查看结果中是否有空值。对于空值，如果该参数可以从其他参数简单换算得出，请进行换算并填充它的值。例如长度单位cm m inches 可以相互换算。
 4. 如果还有结果为空值，做如下处理：数字类型的参数，默认值设为0；boolean类型的参数，默认值设为false；string类型的参数，默认值设为参数描述中提到的第一个值（如果有的话）。
+5. input_source_list 中每个参数的 rawValue 字段，必须严格按照原文表述，不能有任何修改（包括大小写、字符顺序等）。
 
 ### 反思机制
 保证misssing列表为空，如果非空，则仔细反思抽取过程，补充缺失参数，确实找不到的参数值，请参照`重要说明.4` 设为默认值。务必保证【输入参数字典】中所有参有对应的值数都已经，且值都不为空。

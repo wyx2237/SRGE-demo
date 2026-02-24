@@ -68,7 +68,8 @@ async def question_analyze(question:str) -> dict:
 
     analyze_prompt = """
 ### 任务说明
-你是一个医学领域的计算问题分析专家，你需要根据我给出的以下【工具模板】清单，对【待计算问题】进行分析，根据清单依次判断该计算问题中是否包含符合当前【工具模板】定义的步骤。
+你是一个医学领域的计算问题分析专家，你需要根据我给出的以下【工具模板清单】，对【待计算问题】进行分析和步骤拆解
+对于每一个拆解后的子步骤，你需要从【工具模板清单】中选出最贴合当前步骤的工具模板，作为当前步骤的所属类型Category，并且需要给出选取该工具模板的理由Reasoning。
 对于每个符合的特定工具模版的步骤，请列出我要求的【步骤信息】, 并且你需要保证这些步骤能够组合为一个完整的计算流程，给出【步骤组合的流程示意】。
 最后，反思当前的步骤先后顺序是否存在问题，并进行相应的调整，确保步骤组合的合理性。
 
@@ -81,7 +82,7 @@ async def question_analyze(question:str) -> dict:
 如果不符合以上工具模板，请选择 Other 类别。
 
 ### 步骤信息
-Category: 所属工具模板——列出所属的工具模板的标准名称（只能一个）
+Category: 所属工具模板——列出所属的工具模板的标准名称（只能一个，并且必须从【工具模板清单】中选择）
 Name: 步骤名称——描述当前步骤的名称
 Description：步骤描述——描述当前步骤的目标、过程等信息
 Inputs: 步骤输入——描述当前步骤的全部输入信息（参数名、类型、描述）
@@ -154,7 +155,7 @@ Reasoning: 归类原因——解释为什么把这个步骤归类到这一工具
         analyze_result = get_agent_response(task_result)
         # print(f"analyze_result:\n{analyze_result}")
         steps_result_dict = regex_json(analyze_result)
-        print(f"steps_result_dict:\n{steps_result_dict}")
+        # print(f"steps_result_dict:\n{steps_result_dict}")
         # steps_result_dict = regex_json_parse(analyze_result)
         if steps_result_dict is not None:
             break
@@ -206,6 +207,7 @@ steps: 计算步骤
           output_type: 输出参数类型
           
       category: 所属类别
+      reason: 归类原因——解释为什么把这个步骤归类到这一工具模板下
       detail：步骤详细计算过程
 
 output: 输出结果（只有一个，dict形式）
@@ -275,10 +277,10 @@ output: 输出结果（只有一个，dict形式）
     agent = get_general_agent(name="FlowComposer")
     task_result = await agent.run(task=compose_prompt)
     calculate_flow = get_agent_response(task_result)
-    print("calculate_flow:\n")
-    print(calculate_flow)
-    print(len(calculate_flow))
-    print(type(calculate_flow))
+    # print("calculate_flow:\n")
+    # print(calculate_flow)
+    # print(len(calculate_flow))
+    # print(type(calculate_flow))
 
     # calculate_flow = chat_method(compose_prompt)
     # print(calculate_flow)
@@ -398,15 +400,15 @@ step.inputs 中每个输入参数，需要从 context 中找到其来源，并�
 ### 当前步骤
 %s
 """
-    context = {"inputs": calculate_flow_dict.get("inputs",[])}
-    # context = {"inputs": p["input_name"] for p in calculate_flow_dict.get("inputs",[])}
+    # context = {"inputs": calculate_flow_dict.get("inputs",[])}
+    context = {"inputs": [p["input_name"] for p in calculate_flow_dict["inputs"]]}
     steps = calculate_flow_dict.get("steps", [])
     steps_with_source = []
     calflow = CalculateFlow(flow_definition={})
     ## 更新输入输出流设置
     for step in steps:
         prompt = data_flow_prompt % (context, step)
-        print(f"prompt:\n{prompt}\n")
+        # print(f"prompt:\n{prompt}\n")
         try_times = 0
         add_info = "\nadd_info\n:"
         while try_times < MAX_TRY_TIMES: 
@@ -436,7 +438,7 @@ step.inputs 中每个输入参数，需要从 context 中找到其来源，并�
         step_id = step.get("step_id") # 小心 步骤编号 和上下文字典表示问题 导致计算时无法取到参数
 
         # 更新上下文字典，添加当前步骤的输出到上下文字典
-        context.update({step_id: step["step_outputs"]})
+        context.update({step_id: [p["output_name"] for p in step["step_outputs"]]})
         # context.update({step_id: [p["output_name"] for p in step["step_outputs"]]})
 
         steps_with_source.append(updated_step)
@@ -567,11 +569,11 @@ def 函数名(输入参数: 参数类型...) -> 参数类型:
 
     steps_with_code = []
     steps = calculate_flow_dict.get("steps", [])
-    print(steps)
+    # print(steps)
     # print(json.dumps(steps, indent=4, ensure_ascii=False))
     # raise ValueError("暂时不支持生成函数") 
     for step in steps:
-        print(f"step:\n{step}")
+        # print(f"step:\n{step}")
         try:
             prompt = function_prompt % (CategoryDict[step['category']].get('code_logic'), step)
         except:
@@ -580,11 +582,11 @@ def 函数名(输入参数: 参数类型...) -> 参数类型:
         try_times = 0
         while try_times < MAX_TRY_TIMES: 
             agent = get_general_agent(name="FunctionGenerator")
-            print(f"prompt:\n{prompt}\n")
+            # print(f"prompt:\n{prompt}\n")
             task_result = await agent.run(task=prompt)
             code_result = get_agent_response(task_result)
             # code_result = chat_method(prompt)
-            print(code_result)
+            # print(code_result)
             code = regex_python(code_result)
             print(f"step:\n{step}")
             if code.startswith("def"): # 检查代码正确性

@@ -16,7 +16,7 @@
           </el-icon>
         </div>
       </el-tooltip>
-      <BreadcrumbView />
+      <BreadcrumbView :showIcon="true"/>
     </div>
 
     <div class="header-right">

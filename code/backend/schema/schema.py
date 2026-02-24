@@ -1,10 +1,20 @@
-import pydantic
+from pydantic import BaseModel
+from typing import Optional, Any, Dict
 
-class ResponseBase(pydantic.BaseModel):
+class ResponseBase(BaseModel):
     code: int
     message: str
-    data: Optional[Any] = None
+    data: Dict = {}
 
+class RuleGenerateRequest(BaseModel):
+    question: str
+    knowledge: str
+    text: str
+
+class CalculationRequest(BaseModel):
+    rule: Dict
+    text: str
+    
 # class WorkflowResponse(pydantic.BaseModel):
 #     steps: List[dict]
 #     initial_state: dict

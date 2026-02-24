@@ -8,7 +8,7 @@
           <div class="step-badge">STEP 04</div>
           <h2 class="title">Calculation Execution</h2>
           <p class="subtitle">
-            Parse clinical text, extract variables, and execute the rule logic.
+            Parse EMR text, extract variables, and execute the rule logic.
           </p>
         </div>
         
@@ -16,7 +16,7 @@
           <div v-if="hasExecuted" class="reset-btn-wrapper">
             <el-tooltip 
               raw-content
-              content="<div>Reset Execution: Clears the current execution results<br/>and returns to the initial state. You can re-execute<br/>the calculation or modify previous steps.</div>"
+              content="<div>Reset Execution: Clears the current execution results<br/>and returns to the initial state.</div>"
               placement="bottom"
               effect="dark"
             >
@@ -47,12 +47,14 @@
         <div class="execute-btn-wrapper">
           <el-tooltip 
             raw-content
-            content="<div>Execute Medical Calculation Engine: Click this button<br/>to start executing the structured rule. The system will parse<br/>clinical text, extract variables, execute calculation logic<br/>step by step, and generate the final result.</div>"
+            content="<div>Click to start executing the structured rule.</div>"
             placement="top"
             effect="dark"
           >
             <el-icon class="help-icon-before-execute"><QuestionFilled /></el-icon>
           </el-tooltip>
+          
+          <!-- 修改点：按钮动画优化 -->
           <el-button 
             type="primary" 
             size="large" 
@@ -61,8 +63,14 @@
             round 
             class="execute-btn"
           >
-            <el-icon class="el-icon--left"><VideoPlay /></el-icon>
-            Calculation Execution
+            <!-- 加载时显示 Spinner (Element Plus loading 属性会自动处理)，我们只需控制文案 -->
+            <template v-if="!extracting">
+              <el-icon class="el-icon--left"><VideoPlay /></el-icon>
+              Calculation Execution
+            </template>
+            <template v-else>
+              Executing ...
+            </template>
           </el-button>
         </div>
       </div>
@@ -70,19 +78,14 @@
       <!-- 3. Execution Result View -->
       <div v-else class="execution-view">
         
-        <!-- A. Source Text Highlighting (New Feature) -->
+        <!-- A. Source Text Highlighting -->
         <div class="section-container source-text-section">
           <div class="section-header clickable" @click="isTextExpanded = !isTextExpanded">
             <div class="title-group">
               <el-icon><Document /></el-icon>
               <span>Source Text Analysis</span>
               <el-tag size="small" effect="plain" round class="status-tag">Parsed</el-tag>
-              <el-tooltip 
-                raw-content
-                content="<div>Source Text Analysis: Displays the original clinical text<br/>with highlighted extracted entities (variable values).<br/>You can click to expand/collapse to view the complete clinical text.<br/>Highlighted portions indicate successfully extracted parameters.</div>"
-                placement="top"
-                effect="dark"
-              >
+              <el-tooltip raw-content content="<div>Original clinical text with highlighted entities.</div>" placement="top" effect="dark">
                 <el-icon class="help-icon-in-section" @click.stop><QuestionFilled /></el-icon>
               </el-tooltip>
             </div>
@@ -111,17 +114,20 @@
           <div class="left-panel">
             <div class="section-title">
               <el-icon><Files /></el-icon> Parameter Extraction
-              <el-tooltip 
-                raw-content
-                content="<div>Parameter Extraction: Displays all variables and their values<br/>extracted from clinical text. Includes variable names, original<br/>text fragments, and parsed numerical values. These parameters<br/>will be used in subsequent calculation steps.</div>"
-                placement="top"
-                effect="dark"
-              >
+              <el-tooltip raw-content content="<div>Extracted variables used in calculation.</div>" placement="top" effect="dark">
                 <el-icon class="help-icon"><QuestionFilled /></el-icon>
               </el-tooltip>
             </div>
-            <div class="table-card">
-              <el-table :data="extractedParams" :border="false" class="modern-table">
+            
+            <!-- 修改点：添加固定高度类 scroll-container -->
+            <div class="table-card scroll-container">
+              <!-- 修改点：添加 height="100%" 让表格充满容器并内部滚动 -->
+              <el-table 
+                :data="extractedParams" 
+                :border="false" 
+                class="modern-table"
+                height="100%" 
+              >
                 <el-table-column prop="name" label="Variable">
                   <template #default="{ row }">
                     <span class="code-text primary">{{ row.name }}</span>
@@ -145,16 +151,13 @@
           <div class="right-panel">
             <div class="section-title">
               <el-icon><Operation /></el-icon> Execution Trace
-              <el-tooltip 
-                raw-content
-                content="<div>Execution Trace: Displays each step of rule execution,<br/>including step name, category, calculation logic, and output results.<br/>You can view the complete calculation process and understand<br/>how each step transforms inputs into outputs.</div>"
-                placement="top"
-                effect="dark"
-              >
+              <el-tooltip raw-content content="<div>Step-by-step execution logic.</div>" placement="top" effect="dark">
                 <el-icon class="help-icon"><QuestionFilled /></el-icon>
               </el-tooltip>
             </div>
-            <div class="trace-container">
+            
+            <!-- 修改点：复用 scroll-container 类，移除原来的 max-height 样式，统一在 CSS 控制 -->
+            <div class="trace-container scroll-container">
               <el-timeline>
                 <el-timeline-item
                   v-for="(step, index) in executionSteps"
@@ -168,7 +171,7 @@
                   <div class="trace-card">
                     <div class="trace-header">
                       <span class="step-name">{{ step.stepName }}</span>
-                      <el-tag size="small" :type="step.tagType" effect="light" class="step-tag">{{ step.category }}</el-tag>
+                      <!-- <el-tag size="small" :type="step.tagType" effect="light" class="step-tag">{{ step.category }}</el-tag> -->
                     </div>
                     <div class="trace-body">
                       <div class="logic-row">
@@ -176,9 +179,14 @@
                         <code class="logic-code">{{ step.logic }}</code>
                       </div>
                       <div class="result-row">
-                        <span class="label">Output:</span>
+                        <span class="label">Output Name:</span>
+                        <span>{{ step.outputName }}</span>
+                        <br>
+                      </div>
+                      <div class="result-row">
+                        <span class="label">Value:</span>
                         <span class="result-value">{{ step.result }}</span>
-                        <span class="result-var">({{ step.outputName }})</span>
+                        <br>
                       </div>
                     </div>
                   </div>
@@ -194,23 +202,17 @@
           <div class="result-card">
             <div class="result-label-wrapper">
               <div class="result-label">FINAL MEDICAL CALCULATION RESULT</div>
-              <el-tooltip 
-                raw-content
-                content="<div>Final Medical Calculation Result: Displays the final output value<br/>after the entire rule execution. This is the final medical metric<br/>calculated based on structured rules and extracted parameters,<br/>which can be used for clinical decision-making.</div>"
-                placement="top"
-                effect="dark"
-              >
+              <el-tooltip raw-content content="<div>The final calculated metric.</div>" placement="top" effect="dark">
                 <el-icon class="help-icon-in-result"><QuestionFilled /></el-icon>
               </el-tooltip>
             </div>
             <div class="result-value-group">
               <span class="value">{{ finalResult }}</span>
-              <span class="unit">mL/min</span>
+              <!-- 这里单位可以做成动态的，目前暂时写死或从 props 传 -->
+              <span class="unit">{{ finalResultUnit }}</span>
             </div>
             <div class="result-info">
-              <el-tag effect="dark" type="success" round>Creatinine Clearance</el-tag>
-              <span class="divider">|</span>
-              <span class="rule-name">Cockcroft-Gault Formula</span>
+              <el-tag effect="dark" type="success" round>Calculation Complete</el-tag>
             </div>
           </div>
         </div>
@@ -223,10 +225,22 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Files, Cpu, Operation, VideoPlay, RefreshLeft, Document, ArrowDown, QuestionFilled } from '@element-plus/icons-vue';
-import { mockClinicalText } from '@/stores/mockData';
+import { 
+  Files, Cpu, Operation, VideoPlay, 
+  RefreshLeft, Document, ArrowDown, QuestionFilled 
+} from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import { srge_api } from '@/api/index';
 
-// --- 类型定义 ---
+// Props
+const props = defineProps<{
+  formData: {
+    rule: object;
+    clinicalText: string;
+  }
+}>();
+
+// Interfaces
 interface ParamItem {
   name: string;
   rawValue: string;
@@ -240,27 +254,28 @@ interface StepItem {
   logic: string;
   outputName: string;
   result: string;
-  type: 'primary' | 'success' | 'warning' | 'info';
+  type?: 'primary' | 'success' | 'warning' | 'info';
   color?: string;
-  tagType: '' | 'success' | 'warning' | 'info' | 'danger';
+  tagType?: '' | 'success' | 'warning' | 'info' | 'danger';
 }
 
-// --- 状态 ---
+// State
 const hasExecuted = ref(false);
 const extracting = ref(false);
-const finalResult = ref<string | null>(null);
+const finalResult = ref<string | number | null>(null);
+const finalResultUnit = ref<string>("");
 const extractedParams = ref<ParamItem[]>([]);
 const executionSteps = ref<StepItem[]>([]);
 const isTextExpanded = ref(false);
 
-// --- 计算属性：高亮 HTML ---
+// Computed HTML Highlight
 const highlightedHtml = computed(() => {
-  if (!mockClinicalText) return '';
-  let html = mockClinicalText;
-  
+  if (!props.formData.clinicalText) return '';
+  let html = props.formData.clinicalText;
+  // 先处理clinical中多个空格全部替换为一个空格
+  html = html.replace(/\s+/g, ' ');
   extractedParams.value.forEach(param => {
     if (param.rawValue) {
-      // 简单替换，实际项目建议使用更严谨的 NLP 索引切分
       const regex = new RegExp(`(${escapeRegExp(param.rawValue)})`, 'gi');
       html = html.replace(regex, `<span class="highlight-mark" title="${param.name}: ${param.value}">$1</span>`);
     }
@@ -272,71 +287,67 @@ function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// --- Actions ---
+// Actions
 const resetState = () => {
   hasExecuted.value = false;
   finalResult.value = null;
+  finalResultUnit.value = "";
   extractedParams.value = [];
   executionSteps.value = [];
   isTextExpanded.value = false;
 };
 
-const executeEngine = () => {
-  extracting.value = true;
-  setTimeout(() => {
-    hasExecuted.value = true;
-    isTextExpanded.value = true; // 自动展开原文
-    
-    // Mock Data
-    extractedParams.value = [
-      { name: 'age', rawValue: '58-year-old', value: 58 },
-      { name: 'gender', rawValue: 'male', value: 'male' },
-      { name: 'height_m', rawValue: '178 cm', value: 1.78 },
-      { name: 'actual_weight', rawValue: '95 kg', value: 95.0 },
-      { name: 'serum_creatinine', rawValue: '1.2 mg/dL', value: 1.2 }
-    ];
+const executeEngine = async () => {
+  if (!props.formData.rule || !props.formData.clinicalText) {
+    ElMessage.warning('Missing rule or clinical text data.');
+    return;
+  }
 
-    executionSteps.value = [
-      { 
-        stepId: '1', stepName: 'Calc BMI', category: 'Formula',
-        logic: 'weight / height² = 95 / 1.78²', outputName: 'bmi', result: '29.98', 
-        type: 'primary', tagType: ''
-      },
-      { 
-        stepId: '2', stepName: 'Weight Cat', category: 'Logic',
-        logic: 'BMI 29.98 ≥ 25 (Overweight)', outputName: 'category', result: '"Overweight"', 
-        type: 'warning', color: '#f59e0b', tagType: 'warning'
-      },
-      { 
-        stepId: '3', stepName: 'Calc IBW', category: 'Formula',
-        logic: '50 + 2.3 * (height_in - 60)', outputName: 'ibw', result: '73.18', 
-        type: 'info', tagType: 'info'
-      },
-      { 
-        stepId: '4', stepName: 'Calc ABW', category: 'Formula',
-        logic: 'IBW + 0.4 * (Actual - IBW)', outputName: 'abw', result: '81.91', 
-        type: 'info', tagType: 'info'
-      },
-      { 
-        stepId: '5', stepName: 'Sel Weight', category: 'Condition',
-        logic: 'Overweight → Use ABW', outputName: 'selected_weight', result: '81.91', 
-        type: 'success', color: '#10b981', tagType: 'success'
-      },
-      { 
-        stepId: '6', stepName: 'Calc CrCl', category: 'Final',
-        logic: 'Cockcroft-Gault Formula', outputName: 'crcl', result: '77.74', 
-        type: 'primary', tagType: ''
+  extracting.value = true; // 开始动画
+
+  try {
+    let ruleObj: object = props.formData.rule;
+    if (typeof ruleObj === 'string') {
+      try {
+        ruleObj = JSON.parse(ruleObj);
+      } catch (e) {
+        throw new Error('Invalid Rule JSON format');
       }
-    ];
+    }
+
+    const res = await srge_api.calExec({
+      rule: ruleObj,
+      text: props.formData.clinicalText
+    });
+
+    hasExecuted.value = true;
+    isTextExpanded.value = true;
     
-    finalResult.value = `77.74`;
-    extracting.value = false;
-  }, 1500);
+    extractedParams.value = res.input_source_list || [];
+    executionSteps.value = (res.execution_steps || []).map((step: any) => ({
+      ...step,
+      type: step.type || 'primary',
+      tagType: step.tagType || 'info', 
+      color: step.color || ''
+    }));
+    finalResult.value = res.final_result;
+    finalResultUnit.value = "";
+
+    ElMessage.success('Calculation completed successfully');
+
+  } catch (error: any) {
+    console.error(error);
+    ElMessage.error(error.message || 'Execution failed.');
+    hasExecuted.value = false;
+  } finally {
+    extracting.value = false; // 结束动画
+  }
 };
 </script>
 
 <style scoped lang="scss">
-/* 全局容器 (继承之前的风格) */
+/* --- 布局与基础样式保持不变，重点修改 Table 和 Trace 的高度部分 --- */
+
 .step-content-wrapper {
   width: 100%;
   font-family: 'Inter', -apple-system, sans-serif;
@@ -354,7 +365,7 @@ const executeEngine = () => {
   min-height: 500px;
 }
 
-/* 1. Header */
+/* Header */
 .card-header-flex {
   display: flex;
   justify-content: space-between;
@@ -376,7 +387,6 @@ const executeEngine = () => {
     .title { font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; }
     .subtitle { font-size: 1rem; color: #64748b; margin: 0; }
   }
-  
   .reset-btn-wrapper {
     display: flex;
     align-items: center;
@@ -385,16 +395,13 @@ const executeEngine = () => {
       color: var(--el-text-color-placeholder);
       font-size: 0.95rem;
       cursor: help;
-      transition: color 0.2s;
-      &:hover {
-        color: #2563eb;
-      }
+      &:hover { color: #2563eb; }
     }
   }
   .reset-btn { font-weight: 600; color: var(--el-text-color-secondary); &:hover { color: #2563eb; } }
 }
 
-/* 2. Initial State */
+/* Initial State */
 .initial-state-container {
   display: flex;
   flex-direction: column;
@@ -414,7 +421,6 @@ const executeEngine = () => {
     font-size: 32px;
     color: var(--el-color-primary);
     margin-bottom: 24px;
-    
     .pulse-ring {
       position: absolute;
       width: 100%;
@@ -437,10 +443,7 @@ const executeEngine = () => {
       color: var(--el-text-color-placeholder);
       font-size: 1rem;
       cursor: help;
-      transition: color 0.2s;
-      &:hover {
-        color: #2563eb;
-      }
+      &:hover { color: #2563eb; }
     }
   }
   
@@ -449,18 +452,19 @@ const executeEngine = () => {
     font-size: 1.1rem;
     font-weight: 700;
     box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
-    transition: transform 0.2s;
+    transition: transform 0.2s, background-color 0.2s;
+    min-width: 250px; /* 增加最小宽度，防止loading时按钮收缩 */
+    
     &:hover { transform: translateY(-2px); }
   }
 }
 
-/* 3. Execution View - Source Text */
+/* Source Text */
 .source-text-section {
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 32px;
-  
   .section-header {
     background: #f8fafc;
     padding: 12px 20px;
@@ -469,39 +473,20 @@ const executeEngine = () => {
     align-items: center;
     border-bottom: 1px solid #e2e8f0;
     transition: background 0.2s;
-    
     &.clickable:hover { background: #f1f5f9; }
-    
     .title-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 600;
-      color: #334155;
+      display: flex; align-items: center; gap: 10px; font-weight: 600; color: #334155;
       .status-tag { border-color: #cbd5e1; color: #64748b; }
-      .help-icon-in-section {
-        color: #94a3b8;
-        font-size: 0.9rem;
-        cursor: help;
-        transition: color 0.2s;
-        &:hover {
-          color: #2563eb;
-        }
-      }
+      .help-icon-in-section { color: #94a3b8; font-size: 0.9rem; cursor: help; &:hover { color: #2563eb; } }
     }
-    
     .toggle-icon {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.85rem;
-      color: #94a3b8;
+      display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #94a3b8;
       .is-rotated { transform: rotate(180deg); }
     }
   }
-  
   .source-body {
     background: #fff;
+    
     .text-content {
       padding: 24px;
       font-family: 'Georgia', serif;
@@ -509,28 +494,34 @@ const executeEngine = () => {
       line-height: 1.8;
       color: #1e293b;
       
+      /* --- 新增：高度限制与滚动 --- */
+      max-height: 400px;       /* 限制最大高度 */
+      overflow-y: auto;        /* 超过高度显示滚动条 */
+      
+      /* 美化滚动条 (Webkit) */
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 3px;
+      }
+      &::-webkit-scrollbar-track {
+        background-color: #f1f5f9;
+      }
+      /* ------------------------- */
+      
       :deep(.highlight-mark) {
-        background-color: #fef3c7; /* Amber-100 */
-        border-bottom: 2px solid #f59e0b; /* Amber-500 */
-        color: #92400e;
-        padding: 0 4px;
-        border-radius: 2px;
-        font-weight: 600;
-        cursor: help;
+        background-color: #fef3c7; border-bottom: 2px solid #f59e0b; color: #92400e; padding: 0 4px; border-radius: 2px; font-weight: 600; cursor: help;
         transition: background-color 0.2s;
         &:hover { background-color: #fde68a; }
       }
     }
+    
     .legend-bar {
-      border-top: 1px dashed #e2e8f0;
-      padding: 8px 24px;
-      background: #fafafa;
+      border-top: 1px dashed #e2e8f0; padding: 8px 24px; background: #fafafa;
       .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.75rem;
-        color: #64748b;
+        display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #64748b;
         .dot { width: 8px; height: 8px; border-radius: 2px; }
         .dot.highlight { background: #fef3c7; border: 1px solid #f59e0b; }
       }
@@ -538,7 +529,7 @@ const executeEngine = () => {
   }
 }
 
-/* 4. Split Layout (Params + Trace) */
+/* Split Layout */
 .split-layout {
   display: flex;
   gap: 32px;
@@ -548,84 +539,65 @@ const executeEngine = () => {
   .right-panel { flex: 5; }
   
   .section-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #475569;
-    margin-bottom: 16px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    .help-icon {
-      color: #94a3b8;
-      font-size: 0.85rem;
-      cursor: help;
-      transition: color 0.2s;
-      margin-left: 4px;
-      &:hover {
-        color: #3b82f6;
-      }
-    }
+    display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 700; color: #475569; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;
+    .help-icon { color: #94a3b8; font-size: 0.85rem; cursor: help; margin-left: 4px; &:hover { color: #3b82f6; } }
   }
 }
 
-/* Table Card */
-.table-card {
+/* --- 核心修改：统一高度与滚动 --- */
+.scroll-container {
+  height: 300px; /* 统一高度 */
+  width: 420px;
+  overflow-y: auto; /* 允许纵向滚动 */
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  overflow: hidden;
+  background: #fff;
+  
+  /* 美化滚动条 */
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+  &::-webkit-scrollbar-track { background-color: #f1f5f9; }
+}
+
+/* Table Card Specifics */
+.table-card {
+  /* 移除 overflow: hidden，因为 scroll-container 已处理 */
 }
 
 .modern-table {
-  :deep(th.el-table__cell) { background: #f8fafc; font-size: 0.8rem; text-transform: uppercase; }
+  /* 表头背景色，确保滚动时看起来协调 */
+  :deep(th.el-table__cell) { background: #f8fafc; font-size: 0.8rem; text-transform: uppercase; z-index: 10; }
   .code-text { font-family: 'Consolas', monospace; font-weight: 600; font-size: 0.9rem; }
   .code-text.primary { color: #2563eb; }
   .source-fragment { font-style: italic; color: #64748b; font-size: 0.9rem; }
   .value-text { font-weight: 700; color: #1e293b; }
 }
 
-/* Trace Timeline */
+/* Trace Timeline Specifics */
 .trace-container {
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 10px;
-  
+  width: 440px;
+  padding: 16px; /* 增加内边距 */
+  overflow-x: hidden;   /* ✅ 防止横向溢出 */
+
   .trace-card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 4px;
-    
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 4px;
+    max-width: 100%;        /* ✅ 不允许超出父容器 */
+    box-sizing: border-box; /* ✅ 防止 padding 撑宽 */
     .trace-header {
-      background: #f8fafc;
-      padding: 8px 12px;
-      border-bottom: 1px solid #f1f5f9;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;
       .step-name { font-weight: 700; font-size: 0.85rem; color: #334155; }
       .step-tag { font-weight: 600; border: none; }
     }
-    
     .trace-body {
-      padding: 10px 12px;
-      font-size: 0.85rem;
-      
+      padding: 10px 12px; font-size: 0.85rem;
       .logic-row { margin-bottom: 6px; display: flex; gap: 8px; color: #64748b; }
-      .logic-code { font-family: 'Consolas', monospace; color: #475569; background: #f1f5f9; padding: 0 4px; border-radius: 4px; }
-      
+      .logic-code { 
+        font-family: 'Consolas', monospace; 
+        color: #475569; background: #f1f5f9; padding: 0 4px; border-radius: 4px;   
+        word-break: break-all;     /* ✅ 强制长字符串换行 */
+        white-space: normal;       /* ✅ 允许自动换行 */}
       .result-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: #059669;
-        font-weight: 600;
-        background: #ecfdf5;
-        padding: 6px 8px;
-        border-radius: 4px;
-        
+        display: flex; align-items: center; gap: 8px; color: #059669; font-weight: 600; background: #ecfdf5; padding: 6px 8px; border-radius: 4px;
         .result-value { font-weight: 800; font-size: 1rem; }
         .result-var { font-weight: 400; font-size: 0.8rem; opacity: 0.8; }
       }
@@ -633,68 +605,28 @@ const executeEngine = () => {
   }
 }
 
-/* 5. Final Result Panel */
+/* Final Result Panel */
 .final-result-wrapper {
   margin-top: 20px;
-  
   .result-card {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    border-radius: 16px;
-    padding: 32px;
-    text-align: center;
-    color: #fff;
-    box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
-    
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; padding: 32px; text-align: center; color: #fff; box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 10px 10px -5px rgba(15, 23, 42, 0.04);
     .result-label-wrapper {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 16px;
-      .result-label {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #94a3b8;
-        letter-spacing: 2px;
-      }
-      .help-icon-in-result {
-        color: #94a3b8;
-        font-size: 0.9rem;
-        cursor: help;
-        transition: color 0.2s;
-        &:hover {
-          color: #38bdf8;
-        }
-      }
+      display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;
+      .result-label { font-size: 0.85rem; font-weight: 700; color: #94a3b8; letter-spacing: 2px; }
+      .help-icon-in-result { color: #94a3b8; font-size: 0.9rem; cursor: help; &:hover { color: #38bdf8; } }
     }
-    
     .result-value-group {
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 24px;
-      
+      display: flex; align-items: baseline; justify-content: center; gap: 12px; margin-bottom: 24px;
       .value { font-size: 4rem; font-weight: 800; line-height: 1; color: #38bdf8; text-shadow: 0 0 20px rgba(56, 189, 248, 0.3); }
       .unit { font-size: 1.5rem; color: #94a3b8; font-weight: 600; }
     }
-    
-    .result-info {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      font-size: 0.9rem;
-      color: #cbd5e1;
-      .divider { color: #475569; }
-    }
+    .result-info { display: flex; align-items: center; justify-content: center; gap: 16px; font-size: 0.9rem; color: #cbd5e1; .divider { color: #475569; } }
   }
 }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.5; } 100% { transform: scale(1.5); opacity: 0; } }
 
-/* Mobile Adaption */
 @media (max-width: 900px) {
   .split-layout { flex-direction: column; }
 }

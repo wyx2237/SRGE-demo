@@ -13,6 +13,7 @@ deepseek_v3_model_client = OpenAIChatCompletionClient(
         "vision": False,
         "function_calling": True,
         "json_output": True,
+        "structured_output": True,
         "family": "unknown",
     }
 )
@@ -27,6 +28,7 @@ qwen3_8b_model_client = OpenAIChatCompletionClient(
         "function_calling": True,
         "json_output": True,
         "family": "qwen",
+        "string_output": True,
         "structured_output": True,
     },
     extra_body={"enable_thinking": False} # 试了半天终于试出来要配置这个项才能关闭思考模式

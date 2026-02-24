@@ -14,26 +14,17 @@
     <!-- 2. Main Content Area -->
     <div class="main-content">
       <transition name="fade-slide" mode="out-in">
-
-        <!-- Scenario A: Empty State (Step 0 & No Data) -->
-        <div v-if="activeStep === 0 && !pipelineData.clinicalText" class="empty-state-container" key="empty">
-          <div class="empty-content">
-            <div class="icon-box">
-              <el-icon>
-                <Collection />
-              </el-icon>
-            </div>
-            <h3>EMR Input</h3>
-            <p>Please select a sample EMR from the library to initialize the medical calculation pipeline.</p>
-            <el-button type="primary" size="large" round @click="openDialog" class="action-btn">
-              Load EMR Text
-            </el-button>
-          </div>
-        </div>
-
-        <!-- Scenario B: Dynamic Step Component -->
-        <component v-else :is="currentStepComponent" :formData="pipelineData" ref="stepRef" @open-library="openDialog"
-          class="step-component-wrapper" key="component" />
+        
+        <!-- 修改点：直接渲染动态组件，不再判断是否为空 -->
+        <component 
+          :is="currentStepComponent" 
+          :formData="pipelineData" 
+          ref="stepRef" 
+          @open-library="openDialog"
+          class="step-component-wrapper" 
+          key="component" 
+        />
+        
       </transition>
 
       <!-- 3. Actions Bar -->
@@ -42,6 +33,7 @@
 
           <!-- Left: Switch Text -->
           <div class="action-group left">
+            <!-- 仅在已有文本时显示 Switch 按钮，否则 Step1 内部已有加载按钮 -->
             <el-button v-if="activeStep === 0 && pipelineData.clinicalText" @click="openDialog" link type="primary"
               class="link-btn">
               <el-icon class="el-icon--left">
@@ -105,7 +97,6 @@
       </el-table>
 
       <!-- Table for Step 1: Question Selection -->
-      <!-- 修改点：移除了 Standard Formula 列 -->
       <el-table v-if="activeStep === 1" :data="knowledgeCases" stripe style="width: 100%" @row-click="selectCase"
         class="resource-table">
         <el-table-column prop="question" label="Medical Calculation Question" min-width="400">
@@ -113,7 +104,6 @@
             <span class="question-text">{{ row.question }}</span>
           </template>
         </el-table-column>
-        <!-- 已移除 Formula 列 -->
         <el-table-column label="Action" width="100" align="right">
           <template #default>
             <el-button size="small" type="primary" plain round>Select</el-button>
@@ -128,8 +118,11 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { ArrowRight, ArrowLeft, Collection, Switch, RefreshRight } from '@element-plus/icons-vue';
+import { ArrowRight, ArrowLeft, Switch, RefreshRight } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
+
+// --- 1. 导入数据源 ---
+import { CaseMap } from '@/stores/test/caseMap';
 
 defineOptions({ name: 'CalculationMainView' })
 
@@ -143,6 +136,8 @@ const route = useRoute();
 const activeStep = ref(0);
 const showCaseDialog = ref(false);
 
+const selectedCaseId = ref<string>('');
+
 const pipelineData = reactive({
   question: '',
   formula: '',
@@ -151,23 +146,27 @@ const pipelineData = reactive({
 });
 
 type ClinicalCase = { id: string; clinicalText: string }
-// 修改点：类型定义从 formula 改为 description
 type KnowledgeCase = { question: string; description: string }
 
-// Mock Data
-const clinicalCases: ClinicalCase[] = [
-  { id: "CASE-001", clinicalText: "Patient is a 58-year-old male admitted for routine checkup. His height is 178 cm (approx 70 inches) and his actual body weight is 95 kg. Recent laboratory results indicate a Serum Creatinine level of 1.2 mg/dL." },
-  { id: "CASE-002", clinicalText: "The patient is a 45-year-old female presenting with fatigue. Physical examination shows a height of 165 cm and a weight of 60 kg. Blood pressure is 120/80 mmHg." },
-  { id: "CASE-003", clinicalText: "A 70-year-old female with a 10-year history of hypertension. No diabetes or heart failure. She had one TIA last year. Current medications include Lisinopril." }
-];
+// --- 3. 生成 Clinical Cases (Step 0 列表) ---
+const clinicalCases = computed<ClinicalCase[]>(() => {
+  return Object.entries(CaseMap).map(([key, value]: [string, any]) => ({
+    id: key,
+    clinicalText: value.text
+  }));
+});
 
-// 修改点：数据字段从 formula 改为 description
-const knowledgeCases: KnowledgeCase[] = [
-  { question: "Calculate Creatinine Clearance (Cockcroft-Gault)", description: "((140 - Age) * Weight) / (72 * Scr) [* 0.85 if Female]" },
-  { question: "Calculate Body Mass Index (BMI)", description: "BMI = weight_kg / (height_m * height_m)" },
-  { question: "Estimate Glomerular Filtration Rate (eGFR)", description: "CKD-EPI Equation (2021)" },
-  { question: "CHA2DS2-VASc Score Calculation", description: "Score = CHF + Hypertension + Age>=75(2) + Diabetes + Stroke(2) + Vascular + Age65-74 + Sex category" }
-];
+// --- 4. 生成 Knowledge Cases (Step 1 列表) ---
+const knowledgeCases = computed<KnowledgeCase[]>(() => {
+  if (!selectedCaseId.value || !CaseMap[selectedCaseId.value as keyof typeof CaseMap]) {
+    return [];
+  }
+  const questions = CaseMap[selectedCaseId.value as keyof typeof CaseMap].questions;
+  return questions.map((item: any) => ({
+    question: item.question,
+    description: item.formula 
+  }));
+});
 
 const currentStepComponent = computed(() => {
   switch (activeStep.value) {
@@ -179,7 +178,6 @@ const currentStepComponent = computed(() => {
   }
 });
 
-// 修改点：标题修改为 Select Medical Calculation Question
 const dialogTitle = computed(() => activeStep.value === 0 ? 'Select EMR Text Source' : 'Select Medical Calculation Question');
 
 const canProceed = computed(() => {
@@ -193,12 +191,16 @@ const openDialog = () => { showCaseDialog.value = true; }
 
 const selectCase = (row: ClinicalCase | KnowledgeCase) => {
   if (activeStep.value === 0) {
-    pipelineData.clinicalText = (row as ClinicalCase).clinicalText;
-    ElMessage.success('EMR text loaded successfully');
+    const emrRow = row as ClinicalCase;
+    selectedCaseId.value = emrRow.id; 
+    pipelineData.clinicalText = emrRow.clinicalText;
+    pipelineData.question = '';
+    pipelineData.formula = '';
+    ElMessage.success(`EMR text loaded (${emrRow.id})`);
   } else if (activeStep.value === 1) {
-    // 修改点：将 description 赋值给 formula，保持后端逻辑不变
-    pipelineData.question = (row as KnowledgeCase).question;
-    pipelineData.formula = (row as KnowledgeCase).description;
+    const knowledgeRow = row as KnowledgeCase;
+    pipelineData.question = knowledgeRow.question;
+    pipelineData.formula = knowledgeRow.description;
     ElMessage.success('Question selected');
   }
   showCaseDialog.value = false;
@@ -210,6 +212,7 @@ const prevStep = () => { if (activeStep.value > 0) activeStep.value--; };
 const resetPipeline = () => {
   ElMessage.success('Pipeline reset successfully');
   activeStep.value = 0;
+  selectedCaseId.value = '';
   pipelineData.question = '';
   pipelineData.formula = '';
   pipelineData.clinicalText = '';
@@ -232,7 +235,7 @@ onMounted(() => {
   flex-direction: column;
   width: 100%;
   min-height: 100vh;
-  background-color: var(--el-bg-color-page);
+  background-color: rgb(227, 239, 255);
   font-family: 'Inter', -apple-system, sans-serif;
 }
 
@@ -286,53 +289,6 @@ onMounted(() => {
   margin: 0 auto;
   padding: 0 20px 40px 20px;
   box-sizing: border-box;
-}
-
-/* Empty State */
-.empty-state-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-  background: var(--el-bg-color);
-  border-radius: 20px;
-  border: 1px dashed var(--el-border-color);
-
-  .empty-content {
-    text-align: center;
-    max-width: 400px;
-
-    .icon-box {
-      width: 80px;
-      height: 80px;
-      background: var(--el-fill-color-lighter);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-      color: var(--el-text-color-placeholder);
-      margin: 0 auto 24px;
-    }
-
-    h3 {
-      margin: 0 0 12px 0;
-      color: var(--el-text-color-primary);
-      font-size: 1.25rem;
-    }
-
-    p {
-      color: var(--el-text-color-secondary);
-      margin-bottom: 32px;
-      line-height: 1.6;
-    }
-
-    .action-btn {
-      padding: 20px 32px;
-      font-weight: 600;
-      box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
-    }
-  }
 }
 
 /* Transition */
@@ -476,6 +432,13 @@ onMounted(() => {
       font-size: 0.9rem;
       color: #334155;
       line-height: 1.5;
+      
+      /* 多行文本截断 */
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 

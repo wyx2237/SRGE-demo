@@ -22,21 +22,21 @@ export const useTabsStore = defineStore('tabs', () => {
     activePath.value = tab.path
   }
 
-  const removeTab = (path: string) => {
-    if (tabs.value.length === 1 && tabs.value[0].path === path) {
-      // Don't remove the last tab if it's the current one
-      return
-    }
+  // const removeTab = (path: string) => {
+  //   if (tabs.value.length === 1 && tabs.value[0].path === path) {
+  //     // Don't remove the last tab if it's the current one
+  //     return
+  //   }
 
-    const index = tabs.value.findIndex((t) => t.path === path)
-    if (index !== -1) {
-      tabs.value.splice(index, 1)
-      if (activePath.value === path) {
-        // If the closed tab was active, activate the next or previous one
-        activePath.value = tabs.value[Math.max(0, index - 1)].path
-      }
-    }
-  }
+  //   const index = tabs.value.findIndex((t) => t.path === path)
+  //   if (index !== -1) {
+  //     tabs.value.splice(index, 1)
+  //     if (activePath.value === path) {
+  //       // If the closed tab was active, activate the next or previous one
+  //       activePath.value = tabs.value[Math.max(0, index - 1)].path
+  //     }
+  //   }
+  // }
 
   const closeOtherTabs = (path: string) => {
     tabs.value = tabs.value.filter(tab => tab.path === path || !tab.closable)
@@ -68,7 +68,7 @@ export const useTabsStore = defineStore('tabs', () => {
     activePath,
     tabs,
     addTab,
-    removeTab,
+    // removeTab,
     closeOtherTabs,
     closeAllTabs,
     closeRightTabs,

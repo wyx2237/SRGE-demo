@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 # 导入路由模块
-from api.v1 import Dashboard, Calculation
+from api.v1 import Dashboard, Calculation, Rule
+
 # 初始化 FastAPI 应用，更新元数据为 SURGE
 app = FastAPI(
     title="SURGE Engine API", 
@@ -34,6 +35,7 @@ app.add_middleware(
 # 将 Dashboard 和 Calculation 模块挂载到主应用
 app.include_router(Dashboard.router)
 app.include_router(Calculation.router)
+app.include_router(Rule.router)
 
 # --- 根路径检查 ---
 @app.get("/", tags=["Health"])

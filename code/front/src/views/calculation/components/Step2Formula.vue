@@ -6,10 +6,12 @@
       <div class="card-header-flex">
         <div class="header-left">
           <div class="step-badge">STEP 02</div>
-          <h2 class="title">Question Selection</h2>
+          <h2 class="title">Question Input</h2>
           <p class="subtitle">
-            Select the specific medical calculation question you want to solve, and the complete description of the
-            question will be automatically reatrieved from the library.
+            Input a medical calculation question and its complete description. 
+            <span class="recommend-highlight">
+            Or select a question example from `Question Examples` and the system will automatically reatrieve the complete description.
+            </span>
           </p>
         </div>
 
@@ -18,7 +20,7 @@
             <el-icon class="el-icon--left">
               <Collection />
             </el-icon>
-            Select Calculation Question
+            Question Examples
           </el-button>
         </div>
       </div>
@@ -123,6 +125,11 @@ const emit = defineEmits(['open-library']);
       line-height: 1.5;
     }
   }
+
+.recommend-highlight {
+  color: #0ea5e9;
+  font-weight: 700;
+}
 
   /* 按钮样式优化 */
   .header-right {

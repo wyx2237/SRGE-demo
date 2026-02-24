@@ -34,6 +34,34 @@ class CalculateTeam:
         input_params_extracted = extract_result.get("input_dict", {})
         return input_params_extracted
 
+    async def run_params_extract_v2(self, calculator_problem: str, patient_info: str, input_params: str) -> dict:
+        """
+        输入计算问题和病人信息，输出参数字典(包含原文信息)
+        [
+            { name: 'age', rawValue: '58-year-old', value: 58 },
+            { name: 'gender', rawValue: 'male', value: 'male' },
+            { name: 'height_m', rawValue: '178 cm', value: 1.78 },
+            { name: 'actual_weight', rawValue: '95 kg', value: 95.0 },
+            { name: 'serum_creatinine', rawValue: '1.2 mg/dL', value: 1.2 }
+        ]
+        """
+        # print("-"*20 + "\n")
+        input_info = f"calculator_problem:\n{calculator_problem}\n\ninput_params:\n{input_params}\n\npatient_info:\n{patient_info}\n\n"
+        MAX_RETRY = 3
+        for i in range(MAX_RETRY):
+            if i > 0:
+                print(f"Retry {i+1}/{MAX_RETRY}")
+                task_result = await self.parameter_extractor_agent.run(task="format error, please follow the json format with xml tags <json></json>, and try extract params again.")
+            else:
+                task_result = await self.parameter_extractor_agent.run(task=input_info)
+            self._context.update({"parameter_extractor_result": task_result.messages[-1].content})
+            extract_result = regex_json_parse(task_result.messages[-1].content)
+            if extract_result is not None:
+                break
+                
+        # input_params_extracted = extract_result.get("input_source_list", [])
+        return extract_result
+
     async def run_rule_generate(self, question: str) -> dict:
         # RuleGenerator.question_analyze(question=question)
 
