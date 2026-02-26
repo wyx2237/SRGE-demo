@@ -73,7 +73,7 @@ export const useMenuStore = defineStore('menu', () => {
     },
     {
       id: 'm-atomic-tool',
-      title: 'Atomic Tool',
+      title: 'Tool Template',
       path: '/atomic-tool',
       icon: 'HOutline:WrenchScrewdriverIcon',
       type: 'menu',

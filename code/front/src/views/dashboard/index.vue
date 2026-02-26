@@ -17,11 +17,11 @@
       <p class="hero-subtitle">Supporting Clinical Medical Computation</p>
 
       <!-- 描述文案 -->
-      <p class="hero-desc">
+      <!-- <p class="hero-desc">
         Bridging the gap between unstructured EHR text and precise medical metrics. SRGE eliminates
         LLM inconsistency by transforming natural language requirements into deterministic,
         auditable, and interpretable computational workflows.
-      </p>
+      </p> -->
       <p class="hero-desc hero-audience">
         This system is designed for <strong>clinicians and physicians</strong>. It helps doctors
         define, validate, and execute clinical rules in a transparent and auditable way, supporting
@@ -51,7 +51,7 @@
           <el-icon><Menu /></el-icon>
         </div>
         <div class="card-content">
-          <h3>Atomic Tool Library</h3>
+          <h3>Atomic Tool Template Library</h3>
           <p>
             A repository of standardized computational units (thresholds, logic ops) that ensures
             deterministic execution, eliminating the variability found in direct LLM reasoning.
@@ -65,7 +65,7 @@
         <div class="card-content">
           <h3>Rule Generation</h3>
           <p>
-            Transforms natural language clinical requirements into structured, interpretable rule
+            Transforms natural language clinical questions into structured, interpretable rule
             definitions, making the logic transparent and easy for experts to validate.
           </p>
         </div>

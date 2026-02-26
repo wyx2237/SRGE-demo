@@ -5,7 +5,7 @@
     <div class="steps-header">
       <el-steps :active="activeStep" finish-status="success" align-center class="custom-steps">
         <el-step title="EMR Input" description="Input Clinical Text" />
-        <el-step title="Question Selection" description="Select Calcualtion Question" />
+        <el-step title="Question Confirmation" description="Confirm Calcualtion Question" />
         <el-step title="Rule Generation" description="Generate Structured Rule" />
         <el-step title="Calculation Execution" description="Execute Medical Calculation " />
       </el-steps>
@@ -14,8 +14,6 @@
     <!-- 2. Main Content Area -->
     <div class="main-content">
       <transition name="fade-slide" mode="out-in">
-        
-        <!-- 修改点：直接渲染动态组件，不再判断是否为空 -->
         <component 
           :is="currentStepComponent" 
           :formData="pipelineData" 
@@ -24,16 +22,13 @@
           class="step-component-wrapper" 
           key="component" 
         />
-        
       </transition>
 
       <!-- 3. Actions Bar -->
       <div class="footer-actions-block">
         <div class="footer-inner-panel">
-
           <!-- Left: Switch Text -->
           <div class="action-group left">
-            <!-- 仅在已有文本时显示 Switch 按钮，否则 Step1 内部已有加载按钮 -->
             <el-button v-if="activeStep === 0 && pipelineData.clinicalText" @click="openDialog" link type="primary"
               class="link-btn">
               <el-icon class="el-icon--left">
@@ -65,13 +60,9 @@
               Finish & Reset
             </el-button>
           </div>
-
-          <!-- Right: Spacer -->
           <div class="action-group right"></div>
-
         </div>
       </div>
-
     </div>
 
     <!-- Dialog -->
@@ -89,9 +80,23 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="Action" width="100" align="right">
-          <template #default>
-            <el-button size="small" type="primary" plain round>Load</el-button>
+        
+        <!-- 【修改点 1：调整宽度并添加下载按钮】 -->
+        <el-table-column label="Action" width="160" align="right">
+          <template #default="{ row }">
+            <div class="action-buttons">
+              <!-- 下载按钮：使用 @click.stop 阻止触发 selectCase -->
+              <el-button 
+                type="info" 
+                link 
+                :icon="Download" 
+                @click.stop="downloadCaseText(row)"
+                title="Download Text"
+              >
+                Save
+              </el-button>
+              <el-button size="small" type="primary" plain round>Load</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -118,7 +123,8 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { ArrowRight, ArrowLeft, Switch, RefreshRight } from '@element-plus/icons-vue';
+// 【修改点 2：引入 Download 图标】
+import { ArrowRight, ArrowLeft, Switch, RefreshRight, Download } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 
 // --- 1. 导入数据源 ---
@@ -126,7 +132,6 @@ import { CaseMap } from '@/stores/test/caseMap';
 
 defineOptions({ name: 'CalculationMainView' })
 
-// Import child components
 import Step1Context from './components/Step1Context.vue';
 import Step2Formula from './components/Step2Formula.vue';
 import Step3Rule from './components/Step3Rule.vue';
@@ -189,6 +194,33 @@ const canProceed = computed(() => {
 
 const openDialog = () => { showCaseDialog.value = true; }
 
+// 【修改点 3：添加下载功能函数】
+const downloadCaseText = (row: ClinicalCase) => {
+  try {
+    // 1. 创建 Blob 对象
+    const blob = new Blob([row.clinicalText], { type: 'text/plain;charset=utf-8' });
+    
+    // 2. 创建临时下载链接
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // 3. 设置文件名 (例如: Case_101.txt)
+    link.download = `Case_${row.id}.txt`;
+    
+    // 4. 触发下载并清理
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    ElMessage.success(`Downloaded ${row.id} successfully`);
+  } catch (error) {
+    ElMessage.error('Failed to download file');
+    console.error(error);
+  }
+};
+
 const selectCase = (row: ClinicalCase | KnowledgeCase) => {
   if (activeStep.value === 0) {
     const emrRow = row as ClinicalCase;
@@ -239,7 +271,10 @@ onMounted(() => {
   font-family: 'Inter', -apple-system, sans-serif;
 }
 
-/* --- 2. Top Steps Header --- */
+/* ... 保持原有样式不变 ... */
+/* 为了节省篇幅，省略未修改的样式部分，实际代码中请保留原有的样式 */
+/* ... */
+
 .steps-header {
   padding: 30px 40px;
   background: var(--el-bg-color);
@@ -282,7 +317,6 @@ onMounted(() => {
   }
 }
 
-/* --- 3. Main Content Area --- */
 .main-content {
   width: 100%;
   max-width: 1000px;
@@ -291,7 +325,6 @@ onMounted(() => {
   box-sizing: border-box;
 }
 
-/* Transition */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.3s ease;
@@ -307,7 +340,6 @@ onMounted(() => {
   transform: translateY(-10px);
 }
 
-/* --- 4. Footer Actions --- */
 .footer-actions-block {
   width: 100%;
   margin-top: 24px;
@@ -346,7 +378,6 @@ onMounted(() => {
   }
 }
 
-/* --- Buttons Styling --- */
 .link-btn {
   font-weight: 600;
   font-size: 0.9rem;
@@ -413,7 +444,6 @@ onMounted(() => {
   }
 }
 
-/* Table in Dialog */
 .resource-table {
   .text-preview {
     display: flex;
@@ -433,7 +463,6 @@ onMounted(() => {
       color: #334155;
       line-height: 1.5;
       
-      /* 多行文本截断 */
       display: -webkit-box;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 3;
@@ -447,6 +476,14 @@ onMounted(() => {
     color: var(--el-text-color-primary);
     font-size: 1rem;
   }
+}
+
+/* 【修改点 4：新增样式，用于按钮组布局】 */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 @media (max-width: 768px) {

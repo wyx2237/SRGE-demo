@@ -6,17 +6,26 @@
       <div class="card-header-flex">
         <div class="header-left">
           <div class="step-badge">STEP 02</div>
-          <h2 class="title">Question Input</h2>
+          <h2 class="title">Question Confirmation</h2>
           <p class="subtitle">
             Input a medical calculation question and its complete description. 
             <span class="recommend-highlight">
-            Or select a question example from `Question Examples` and the system will automatically reatrieve the complete description.
+            Or select a question example from `Question Examples` and the system will automatically retrieve the complete description.
             </span>
+            Then you should click 'Confirm' to submit the question.
           </p>
         </div>
 
         <div class="header-right">
-          <el-button type="primary" plain round class="library-btn" @click="$emit('open-library')">
+          <!-- 只有在未确认时才允许打开案例库，防止覆盖锁定内容 -->
+          <el-button 
+            type="primary" 
+            plain 
+            round 
+            class="library-btn" 
+            @click="$emit('open-library')"
+            :disabled="isConfirmed"
+          >
             <el-icon class="el-icon--left">
               <Collection />
             </el-icon>
@@ -33,9 +42,14 @@
           <template #label>
             <span class="custom-label">MEDICAL CALCULATION QUESTION</span>
           </template>
-          <el-input v-model="formData.question"
-            placeholder="e.g. Calculate the patient's BMI index based on recent vitals" clearable
-            class="custom-input" />
+          <!-- 绑定 disabled 状态 -->
+          <el-input 
+            v-model="formData.question"
+            placeholder="e.g. Calculate the patient's BMI index based on recent vitals" 
+            clearable
+            class="custom-input" 
+            :disabled="isConfirmed"
+          />
         </el-form-item>
 
         <!-- 公式/知识输入 -->
@@ -43,20 +57,59 @@
           <template #label>
             <span class="custom-label">COMPLETE DESCRIPTION (FORMULA / LOGIC)</span>
           </template>
-          <el-input v-model="formData.formula" type="textarea" :rows="5" resize="none" class="custom-textarea"
-            placeholder="Example: BMI = weight (kg) / (height (m) ^ 2). If height is in cm, convert to meters first." />
+          <!-- 绑定 disabled 状态 -->
+          <el-input 
+            v-model="formData.formula" 
+            type="textarea" 
+            :rows="5" 
+            resize="none" 
+            class="custom-textarea"
+            placeholder="Example: BMI = weight (kg) / (height (m) ^ 2). If height is in cm, convert to meters first." 
+            :disabled="isConfirmed"
+          />
         </el-form-item>
 
       </el-form>
+
+      <!-- 3. 确认按钮区域 (新增) -->
+      <div class="confirm-section">
+        <el-button 
+          v-if="!isConfirmed"
+          type="primary" 
+          size="large" 
+          round 
+          class="confirm-btn" 
+          @click="handleConfirm"
+          :disabled="!canConfirm"
+        >
+          <el-icon class="el-icon--left"><CircleCheck /></el-icon>
+          Confirm Question
+        </el-button>
+        
+        <el-button 
+          v-else 
+          type="success" 
+          size="large" 
+          round 
+          plain
+          class="confirm-btn confirmed" 
+          disabled
+        >
+          <el-icon class="el-icon--left"><Select /></el-icon>
+          Confirmed
+        </el-button>
+      </div>
 
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Collection } from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from 'vue';
+import { Collection, CircleCheck, Select } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus';
 
-defineProps<{
+const props = defineProps<{
   formData: {
     question: string;
     formula: string;
@@ -64,6 +117,25 @@ defineProps<{
 }>();
 
 const emit = defineEmits(['open-library']);
+
+// 新增状态：是否已确认锁定
+const isConfirmed = ref(false);
+
+// 计算属性：只有当两个输入框都有内容时，Confirm 按钮才可用
+const canConfirm = computed(() => {
+  return props.formData.question.trim() !== '' && props.formData.formula.trim() !== '';
+});
+
+// 处理确认逻辑
+const handleConfirm = () => {
+  isConfirmed.value = true;
+  ElMessage.success('Question and description confirmed and locked.');
+};
+
+// 组件挂载时重置状态 (刷新或重新进入都会触发)
+onMounted(() => {
+  isConfirmed.value = false;
+});
 </script>
 
 <style scoped lang="scss">
@@ -93,7 +165,6 @@ const emit = defineEmits(['open-library']);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  /* 顶部对齐 */
   margin-bottom: 40px;
   gap: 20px;
 
@@ -126,10 +197,10 @@ const emit = defineEmits(['open-library']);
     }
   }
 
-.recommend-highlight {
-  color: #0ea5e9;
-  font-weight: 700;
-}
+  .recommend-highlight {
+    color: #0ea5e9;
+    font-weight: 700;
+  }
 
   /* 按钮样式优化 */
   .header-right {
@@ -139,10 +210,9 @@ const emit = defineEmits(['open-library']);
       color: var(--el-text-color-regular);
       font-weight: 600;
       padding: 18px 24px;
-      /* 更大的点击区域 */
       transition: all 0.2s ease;
 
-      &:hover {
+      &:hover:not(:disabled) {
         background-color: var(--el-color-primary-light-9);
         border-color: var(--el-color-primary-light-7);
         color: #2563eb;
@@ -161,7 +231,6 @@ const emit = defineEmits(['open-library']);
     letter-spacing: 0.5px;
     text-transform: uppercase;
     white-space: nowrap;
-    /* keep asterisk and label text on the same line */
   }
 
   /* 通用 Input/Textarea 样式混合 */
@@ -180,7 +249,7 @@ const emit = defineEmits(['open-library']);
       font-weight: 400;
     }
 
-    &:hover {
+    &:hover:not(.is-disabled) {
       border-color: var(--el-border-color-hover, var(--el-border-color));
     }
 
@@ -188,6 +257,14 @@ const emit = defineEmits(['open-library']);
       background-color: #ffffff;
       border-color: #2563eb;
       box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+    
+    /* 禁用状态样式优化 */
+    &.is-disabled {
+      background-color: #f9fafb; /* 极淡灰 */
+      color: #6b7280; 
+      cursor: not-allowed;
+      border-color: #e5e7eb;
     }
   }
 
@@ -202,13 +279,38 @@ const emit = defineEmits(['open-library']);
   :deep(.custom-input .el-input__wrapper) {
     @include modern-input-style;
     padding: 4px 16px;
-    /* 调整内边距适应高度 */
     height: 48px;
-    /* 增加高度更现代 */
 
-    /* 修复 Element Plus input wrapper 的 focus 样式 */
     &.is-focus {
       box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
+    }
+  }
+}
+
+/* 3. Confirm 按钮区域样式 */
+.confirm-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px dashed var(--el-border-color-lighter);
+
+  .confirm-btn {
+    padding: 12px 40px;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+    }
+    
+    &.confirmed {
+      box-shadow: none;
+      cursor: default;
+      opacity: 0.8;
     }
   }
 }
