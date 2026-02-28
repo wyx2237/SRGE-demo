@@ -9,6 +9,8 @@
           <h2 class="title">Rule Generation</h2>
           <p class="subtitle">
             AI-driven transformation of textual questions into executable structured rules.
+            <br>
+            The framework consists of 4 Stages: 1. Question Decomposition, 2. Workflow Modeling, 3. Dependency Verification, 4. Code Synthesis.
           </p>
         </div>
       </div>
@@ -212,7 +214,7 @@
           <h3 class="empty-title">Ready to Generate Rule</h3>
           <p class="empty-desc">
             Click the button below to start the AI-driven rule generation process.<br>
-            The system will analyze the question and construct a logical pipeline.
+            <!-- The system will analyze the question and construct a logical pipeline. -->
           </p>
           <el-button type="primary" size="large" round class="generate-btn" @click="regenerateRule" :loading="loading">
             <el-icon class="el-icon--left">
@@ -337,7 +339,7 @@ const regenerateRule = async () => {
     if (generatedRule) {
       // 成功获取：瞬间拉满进度条
       loadingPercentage.value = 100;
-      loadingPhaseText.value = 'Finalizing Structure...';
+      loadingPhaseText.value = 'Finalizing Rule...';
       
       // 稍微延迟一下以展示 100% 状态，然后渲染数据
       setTimeout(() => {
@@ -385,17 +387,17 @@ const startFakeProgress = () => {
 // 根据进度更新文案
 const updateLoadingText = (progress: number) => {
   if (progress < 20) {
-    loadingPhaseText.value = 'Parsing Clinical Question...';
-    loadingDetailText.value = 'Identifying key medical entities and variables';
+    loadingPhaseText.value = 'Question Decomposition...';
+    loadingDetailText.value = 'Question decomposition into atomic steps categorized by tool template';
   } else if (progress < 50) {
-    loadingPhaseText.value = 'Retrieving Atomic Tools...';
-    loadingDetailText.value = 'Matching logic with available calculation units';
+    loadingPhaseText.value = 'Workflow Modeling...';
+    loadingDetailText.value = 'Modeling the workflow of the rule';
   } else if (progress < 80) {
-    loadingPhaseText.value = 'Constructing Logic Pipeline...';
-    loadingDetailText.value = 'Linking inputs, formulas, and conditions';
+    loadingPhaseText.value = 'Dependency Verification...';
+    loadingDetailText.value = 'Verifying the dependencies between steps';
   } else {
-    loadingPhaseText.value = 'Validating Consistency...';
-    loadingDetailText.value = 'Waiting for server response...';
+    loadingPhaseText.value = 'Code Synthesis...';
+    loadingDetailText.value = 'Synthesizing the python code for the steps';
   }
 };
 

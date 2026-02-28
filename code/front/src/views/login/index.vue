@@ -12,7 +12,7 @@
           <div class="brand-divider"></div>
           <div class="brand-desc">
             Intelligent Workflow-based <br>
-            Structured Rule Generation System
+            Structured Rule Generation and Execution System
           </div>
           
           <div class="feature-tags">
@@ -26,13 +26,13 @@
             </div>
             <div class="feature-item">
               <el-icon><Connection /></el-icon>
-              <span>Case Management</span>
+              <span>Atomic Tool Template</span>
             </div>
           </div>
         </div>
         
         <div class="brand-footer">
-          &copy; 2026 Anonymous Lab
+          &copy; 2026 ecustnlplab
         </div>
       </div>
 
@@ -72,7 +72,7 @@
 
           <div class="form-actions">
             <el-checkbox v-model="remember" label="Remember me" />
-            <el-link type="primary" :underline="false" class="forgot-link">Forgot Password?</el-link>
+            <!-- <el-link type="primary" :underline="false" class="forgot-link">Forgot Password?</el-link> -->
           </div>
 
           <el-button type="primary" class="submit-btn" :loading="loading" @click="submit" round>

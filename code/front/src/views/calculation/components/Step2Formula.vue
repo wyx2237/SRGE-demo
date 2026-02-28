@@ -83,7 +83,7 @@
           :disabled="!canConfirm"
         >
           <el-icon class="el-icon--left"><CircleCheck /></el-icon>
-          Confirm Question
+          Confirm
         </el-button>
         
         <el-button 
@@ -116,7 +116,7 @@ const props = defineProps<{
   }
 }>();
 
-const emit = defineEmits(['open-library']);
+const emit = defineEmits(['open-library', 'confirmed']);
 
 // 新增状态：是否已确认锁定
 const isConfirmed = ref(false);
@@ -130,11 +130,13 @@ const canConfirm = computed(() => {
 const handleConfirm = () => {
   isConfirmed.value = true;
   ElMessage.success('Question and description confirmed and locked.');
+  emit('confirmed', true);
 };
 
 // 组件挂载时重置状态 (刷新或重新进入都会触发)
 onMounted(() => {
   isConfirmed.value = false;
+  emit('confirmed', false);
 });
 </script>
 

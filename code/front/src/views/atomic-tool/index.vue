@@ -88,9 +88,6 @@
                 <div class="ph-left">
                   <el-icon><Cpu /></el-icon> Implementation
                 </div>
-                <div class="ph-right">
-                  <span class="lang-badge">PYTHON</span>
-                </div>
               </div>
               <div class="code-container">
                 <pre><code>{{ tool.code_info.Logic }}</code></pre>

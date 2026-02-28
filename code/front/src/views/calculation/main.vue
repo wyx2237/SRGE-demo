@@ -19,6 +19,8 @@
           :formData="pipelineData" 
           ref="stepRef" 
           @open-library="openDialog"
+          @confirmed="handleStep2Confirmation"
+          @execution-complete="handleStep4Execution"
           class="step-component-wrapper" 
           key="component" 
         />
@@ -29,18 +31,18 @@
         <div class="footer-inner-panel">
           <!-- Left: Switch Text -->
           <div class="action-group left">
-            <el-button v-if="activeStep === 0 && pipelineData.clinicalText" @click="openDialog" link type="primary"
+            <!-- <el-button v-if="activeStep === 0 && pipelineData.clinicalText" @click="openDialog" link type="primary"
               class="link-btn">
               <el-icon class="el-icon--left">
                 <Switch />
               </el-icon>
               Switch Case
-            </el-button>
+            </el-button> -->
           </div>
 
           <!-- Center: Navigation -->
           <div class="action-group center">
-            <el-button v-if="activeStep > 0" @click="prevStep" round class="nav-btn secondary" :icon="ArrowLeft">
+            <el-button v-if="activeStep === 1 || activeStep === 3" @click="prevStep" round class="nav-btn secondary" :icon="ArrowLeft">
               Back
             </el-button>
 
@@ -52,7 +54,10 @@
               </el-icon>
             </el-button>
 
-            <el-button v-if="activeStep === 3" type="success" @click="resetPipeline" round
+            <el-button v-if="activeStep === 3" type="success"
+              @click="resetPipeline"
+              :disabled="!step4Executed"
+              round
               class="nav-btn success-gradient">
               <el-icon class="el-icon--left">
                 <RefreshRight />
@@ -185,9 +190,31 @@ const currentStepComponent = computed(() => {
 
 const dialogTitle = computed(() => activeStep.value === 0 ? 'Select EMR Text Source' : 'Select Medical Calculation Question');
 
+// 新增状态：Step 2 是否已确认
+const step2Confirmed = ref(false);
+
+// 处理 Step 2 的确认事件
+const handleStep2Confirmation = (status: boolean) => {
+  step2Confirmed.value = status;
+};
+
+// 新增状态：Step 4 是否已执行
+const step4Executed = ref(false);
+
+// 处理 Step 4 的完成事件
+const handleStep4Execution = (status: boolean) => {
+  step4Executed.value = status;
+};
+
 const canProceed = computed(() => {
   if (activeStep.value === 0) return pipelineData.clinicalText.trim() !== '';
-  if (activeStep.value === 1) return pipelineData.question.trim() !== '' && pipelineData.formula.trim() !== '';
+  if (activeStep.value === 1) {
+    // Step 1 (Question Selection) 的通过条件：
+    // 1. 问题和公式不为空 (原有逻辑)
+    // 2. AND 必须已经点击了 Confirm 按钮 (新增逻辑)
+    const hasData = pipelineData.question.trim() !== '' && pipelineData.formula.trim() !== '';
+    return hasData && step2Confirmed.value;
+  }
   if (activeStep.value === 2) return !!pipelineData.rule;
   return true;
 });
@@ -249,6 +276,10 @@ const resetPipeline = () => {
   pipelineData.formula = '';
   pipelineData.clinicalText = '';
   pipelineData.rule = '';
+  // 新增：重置 Step 2 确认状态
+  step2Confirmed.value = false;
+  // 新增：重置 Step 4 执行状态
+  step4Executed.value = false;
 };
 
 onMounted(() => {
@@ -440,6 +471,12 @@ onMounted(() => {
     &:hover {
       transform: translateY(-2px);
       box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.4);
+    }
+
+    &:disabled {
+      background: #94a3b8;
+      box-shadow: none;
+      cursor: not-allowed;
     }
   }
 }

@@ -1,15 +1,7 @@
-# 需要完成的事项
-1. 选取合适的例子作为演示 （4个，每个2-3个指标；每个指标对应Structured Rule 预先实现并放在指定位置）
-2. 3个主要界面的API对接和实现（dashboard, calculation, atomic tool
-3. 是否需要数据库单独实现？目前倾向于简单文件存储形式
-4. 
-5. 
-
 ## Calculation
 - question -> structured rule
 - structured rule + emr -> result
 
-需要按照前端展示形式来优化后端产生数据应该包括哪些
 
 ####
 

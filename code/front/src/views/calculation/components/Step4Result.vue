@@ -54,7 +54,6 @@
             <el-icon class="help-icon-before-execute"><QuestionFilled /></el-icon>
           </el-tooltip>
           
-          <!-- 修改点：按钮动画优化 -->
           <el-button 
             type="primary" 
             size="large" 
@@ -63,7 +62,6 @@
             round 
             class="execute-btn"
           >
-            <!-- 加载时显示 Spinner (Element Plus loading 属性会自动处理)，我们只需控制文案 -->
             <template v-if="!extracting">
               <el-icon class="el-icon--left"><VideoPlay /></el-icon>
               Calculation Execution
@@ -119,9 +117,7 @@
               </el-tooltip>
             </div>
             
-            <!-- 修改点：添加固定高度类 scroll-container -->
             <div class="table-card scroll-container">
-              <!-- 修改点：添加 height="100%" 让表格充满容器并内部滚动 -->
               <el-table 
                 :data="extractedParams" 
                 :border="false" 
@@ -156,7 +152,6 @@
               </el-tooltip>
             </div>
             
-            <!-- 修改点：复用 scroll-container 类，移除原来的 max-height 样式，统一在 CSS 控制 -->
             <div class="trace-container scroll-container">
               <el-timeline>
                 <el-timeline-item
@@ -171,7 +166,6 @@
                   <div class="trace-card">
                     <div class="trace-header">
                       <span class="step-name">{{ step.stepName }}</span>
-                      <!-- <el-tag size="small" :type="step.tagType" effect="light" class="step-tag">{{ step.category }}</el-tag> -->
                     </div>
                     <div class="trace-body">
                       <div class="logic-row">
@@ -208,7 +202,6 @@
             </div>
             <div class="result-value-group">
               <span class="value">{{ finalResult }}</span>
-              <!-- 这里单位可以做成动态的，目前暂时写死或从 props 传 -->
               <span class="unit">{{ finalResultUnit }}</span>
             </div>
             <div class="result-info">
@@ -224,7 +217,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { 
   Files, Cpu, Operation, VideoPlay, 
   RefreshLeft, Document, ArrowDown, QuestionFilled 
@@ -232,11 +225,17 @@ import {
 import { ElMessage } from 'element-plus';
 import { srge_api } from '@/api/index';
 
-// Props
+// --- 修改点1: 扩展 formData 类型，增加 executionCache ---
 const props = defineProps<{
   formData: {
     rule: object;
     clinicalText: string;
+    executionCache?: { // 新增缓存字段
+      extractedParams: ParamItem[];
+      executionSteps: StepItem[];
+      finalResult: string | number | null;
+      finalResultUnit: string;
+    };
   }
 }>();
 
@@ -268,11 +267,12 @@ const extractedParams = ref<ParamItem[]>([]);
 const executionSteps = ref<StepItem[]>([]);
 const isTextExpanded = ref(false);
 
+const emit = defineEmits(['execution-complete']);
+
 // Computed HTML Highlight
 const highlightedHtml = computed(() => {
   if (!props.formData.clinicalText) return '';
   let html = props.formData.clinicalText;
-  // 先处理clinical中多个空格全部替换为一个空格
   html = html.replace(/\s+/g, ' ');
   extractedParams.value.forEach(param => {
     if (param.rawValue) {
@@ -287,6 +287,23 @@ function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// --- 修改点2: 组件挂载时检查缓存，如果有则恢复状态 ---
+onMounted(() => {
+  if (props.formData.executionCache) {
+    const cache = props.formData.executionCache;
+    extractedParams.value = cache.extractedParams;
+    executionSteps.value = cache.executionSteps;
+    finalResult.value = cache.finalResult;
+    finalResultUnit.value = cache.finalResultUnit;
+    
+    hasExecuted.value = true;
+    isTextExpanded.value = true;
+    
+    // 关键：通知父组件已完成，以解锁 Finish 按钮
+    emit('execution-complete', true);
+  }
+});
+
 // Actions
 const resetState = () => {
   hasExecuted.value = false;
@@ -295,6 +312,11 @@ const resetState = () => {
   extractedParams.value = [];
   executionSteps.value = [];
   isTextExpanded.value = false;
+
+  // --- 修改点3: 重置时清除缓存 ---
+  delete props.formData.executionCache;
+
+  emit('execution-complete', false);
 };
 
 const executeEngine = async () => {
@@ -303,7 +325,7 @@ const executeEngine = async () => {
     return;
   }
 
-  extracting.value = true; // 开始动画
+  extracting.value = true;
 
   try {
     let ruleObj: object = props.formData.rule;
@@ -320,33 +342,49 @@ const executeEngine = async () => {
       text: props.formData.clinicalText
     });
 
-    hasExecuted.value = true;
-    isTextExpanded.value = true;
-    
-    extractedParams.value = res.input_source_list || [];
-    executionSteps.value = (res.execution_steps || []).map((step: any) => ({
+    // 解析结果
+    const params = res.input_source_list || [];
+    const steps = (res.execution_steps || []).map((step: any) => ({
       ...step,
       type: step.type || 'primary',
       tagType: step.tagType || 'info', 
       color: step.color || ''
     }));
-    finalResult.value = res.final_result;
-    finalResultUnit.value = "";
+    const result = res.final_result;
+    const unit = ""; // 假设 API 没返回单位，暂时为空
+
+    // 更新本地状态
+    hasExecuted.value = true;
+    isTextExpanded.value = true;
+    extractedParams.value = params;
+    executionSteps.value = steps;
+    finalResult.value = result;
+    finalResultUnit.value = unit;
+
+    // --- 修改点4: 将结果保存到 formData 缓存中 ---
+    props.formData.executionCache = {
+      extractedParams: params,
+      executionSteps: steps,
+      finalResult: result,
+      finalResultUnit: unit
+    };
 
     ElMessage.success('Calculation completed successfully');
+    emit('execution-complete', true);
 
   } catch (error: any) {
     console.error(error);
     ElMessage.error(error.message || 'Execution failed.');
     hasExecuted.value = false;
+    emit('execution-complete', false);
   } finally {
-    extracting.value = false; // 结束动画
+    extracting.value = false;
   }
 };
 </script>
 
 <style scoped lang="scss">
-/* --- 布局与基础样式保持不变，重点修改 Table 和 Trace 的高度部分 --- */
+/* --- 布局与基础样式保持不变 --- */
 
 .step-content-wrapper {
   width: 100%;
@@ -453,7 +491,7 @@ const executeEngine = async () => {
     font-weight: 700;
     box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
     transition: transform 0.2s, background-color 0.2s;
-    min-width: 250px; /* 增加最小宽度，防止loading时按钮收缩 */
+    min-width: 250px;
     
     &:hover { transform: translateY(-2px); }
   }
@@ -494,22 +532,12 @@ const executeEngine = async () => {
       line-height: 1.8;
       color: #1e293b;
       
-      /* --- 新增：高度限制与滚动 --- */
-      max-height: 400px;       /* 限制最大高度 */
-      overflow-y: auto;        /* 超过高度显示滚动条 */
+      max-height: 300px;
+      overflow-y: auto;
       
-      /* 美化滚动条 (Webkit) */
-      &::-webkit-scrollbar {
-        width: 6px;
-      }
-      &::-webkit-scrollbar-thumb {
-        background-color: #cbd5e1;
-        border-radius: 3px;
-      }
-      &::-webkit-scrollbar-track {
-        background-color: #f1f5f9;
-      }
-      /* ------------------------- */
+      &::-webkit-scrollbar { width: 6px; }
+      &::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+      &::-webkit-scrollbar-track { background-color: #f1f5f9; }
       
       :deep(.highlight-mark) {
         background-color: #fef3c7; border-bottom: 2px solid #f59e0b; color: #92400e; padding: 0 4px; border-radius: 2px; font-weight: 600; cursor: help;
@@ -517,7 +545,6 @@ const executeEngine = async () => {
         &:hover { background-color: #fde68a; }
       }
     }
-    
     .legend-bar {
       border-top: 1px dashed #e2e8f0; padding: 8px 24px; background: #fafafa;
       .legend-item {
@@ -544,28 +571,20 @@ const executeEngine = async () => {
   }
 }
 
-/* --- 核心修改：统一高度与滚动 --- */
 .scroll-container {
-  height: 300px; /* 统一高度 */
+  height: 300px;
   width: 420px;
-  overflow-y: auto; /* 允许纵向滚动 */
+  overflow-y: auto;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   background: #fff;
   
-  /* 美化滚动条 */
   &::-webkit-scrollbar { width: 6px; }
   &::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
   &::-webkit-scrollbar-track { background-color: #f1f5f9; }
 }
 
-/* Table Card Specifics */
-.table-card {
-  /* 移除 overflow: hidden，因为 scroll-container 已处理 */
-}
-
 .modern-table {
-  /* 表头背景色，确保滚动时看起来协调 */
   :deep(th.el-table__cell) { background: #f8fafc; font-size: 0.8rem; text-transform: uppercase; z-index: 10; }
   .code-text { font-family: 'Consolas', monospace; font-weight: 600; font-size: 0.9rem; }
   .code-text.primary { color: #2563eb; }
@@ -573,20 +592,18 @@ const executeEngine = async () => {
   .value-text { font-weight: 700; color: #1e293b; }
 }
 
-/* Trace Timeline Specifics */
 .trace-container {
   width: 440px;
-  padding: 16px; /* 增加内边距 */
-  overflow-x: hidden;   /* ✅ 防止横向溢出 */
+  padding: 16px;
+  overflow-x: hidden;
 
   .trace-card {
     background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 4px;
-    max-width: 100%;        /* ✅ 不允许超出父容器 */
-    box-sizing: border-box; /* ✅ 防止 padding 撑宽 */
+    max-width: 100%;
+    box-sizing: border-box;
     .trace-header {
       background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;
       .step-name { font-weight: 700; font-size: 0.85rem; color: #334155; }
-      .step-tag { font-weight: 600; border: none; }
     }
     .trace-body {
       padding: 10px 12px; font-size: 0.85rem;
@@ -594,8 +611,9 @@ const executeEngine = async () => {
       .logic-code { 
         font-family: 'Consolas', monospace; 
         color: #475569; background: #f1f5f9; padding: 0 4px; border-radius: 4px;   
-        word-break: break-all;     /* ✅ 强制长字符串换行 */
-        white-space: normal;       /* ✅ 允许自动换行 */}
+        word-break: break-all;
+        white-space: normal;
+      }
       .result-row {
         display: flex; align-items: center; gap: 8px; color: #059669; font-weight: 600; background: #ecfdf5; padding: 6px 8px; border-radius: 4px;
         .result-value { font-weight: 800; font-size: 1rem; }
