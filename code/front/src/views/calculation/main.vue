@@ -148,11 +148,21 @@ const showCaseDialog = ref(false);
 
 const selectedCaseId = ref<string>('');
 
-const pipelineData = reactive({
+// 定义接口以包含 executionCache (如果还没有定义)
+interface PipelineData {
+  question: string;
+  formula: string;
+  clinicalText: string;
+  rule: string;
+  executionCache?: any; // 新增这一行，允许缓存字段存在
+}
+
+const pipelineData = reactive<PipelineData>({
   question: '',
   formula: '',
   clinicalText: '',
-  rule: ''
+  rule: '',
+  // executionCache 初始不存在，或者是 undefined
 });
 
 type ClinicalCase = { id: string; clinicalText: string }
@@ -271,15 +281,23 @@ const prevStep = () => { if (activeStep.value > 0) activeStep.value--; };
 const resetPipeline = () => {
   ElMessage.success('Pipeline reset successfully');
   activeStep.value = 0;
+  
+  // 1. 清空基础数据
   selectedCaseId.value = '';
   pipelineData.question = '';
   pipelineData.formula = '';
   pipelineData.clinicalText = '';
   pipelineData.rule = '';
-  // 新增：重置 Step 2 确认状态
+  
+  // 2. 重置流程控制状态
   step2Confirmed.value = false;
-  // 新增：重置 Step 4 执行状态
   step4Executed.value = false;
+
+  // 3. 【核心修复】彻底清除 Step 4 的执行缓存
+  // 这样当 Step 4 组件再次挂载时，onMounted 检查不到缓存，就会显示初始状态
+  if (pipelineData.executionCache) {
+    delete pipelineData.executionCache;
+  }
 };
 
 onMounted(() => {

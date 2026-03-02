@@ -32,5 +32,4 @@ http://101.132.148.193
 ![image](./docs/pics/image-13.png)
 
 ## Manual
-Will be released soon.
-See [Manual.pdf](./docs/Manual.pdf) for details.
+See [Manual](https://ucngzub1w2nq.feishu.cn/docx/OIJtdD1CeoDOpzxfyCdcOhrWnXe?from=from_copylink) for details.

@@ -240,7 +240,7 @@ CALCULATOR_2 = {
 # "calculator_id": 5
 # "calculator_name": "Mean Arterial Pressure (MAP)"
 CALCULATOR_5 = {
-    "name": "mean_arterial_pressure_calculation",
+    "name": "Mean Arterial Pressure Calculation",
     "description": "This process calculates a patient's Mean Arterial Pressure (MAP) in mm Hg using their systolic and diastolic blood pressure values recorded at the time of initial hospital admission, prior to any treatment.",
     "inputs": [
         {
@@ -297,7 +297,7 @@ CALCULATOR_5 = {
 # "calculator_id": 6
 # "calculator_name": "Body Mass Index (BMI)"
 CALCULATOR_6 = {
-    "name": "body_mass_index_calculation",
+    "name": "Body Mass Index Calculation",
     "description": "This process calculates a patient's Body Mass Index (BMI) using their weight and height measured upon initial hospital admission, prior to any treatment. The result is expressed in kg/m².",
     "inputs": [
         {
@@ -354,7 +354,7 @@ CALCULATOR_6 = {
 # "calculator_id": 68
 # "calculator_name": "Estimated of Conception"
 CALCULATOR_68 = {
-    "name": "estimated_date_of_conception_calculation",
+    "name": "Estimated Date of Conception Calculation",
     "description": "This calculation process estimates a patient's date of conception based on their Last Menstrual Period (LMP) date. The standard medical formula adds 14 days (2 weeks) to the LMP date to account for the typical time from the start of the menstrual cycle to ovulation and fertilization.",
     "inputs": [
         {
@@ -454,7 +454,7 @@ CALCULATOR_68 = {
 # "calculator_id": 48
 # "calculator_name": "PERC Rule for Pulmonary Embolism"
 CALCULATOR_48 = {
-    "name": "perc_rule_criteria_count",
+    "name": "PERC Rule for Pulmonary Embolism Calculation",
     "description": "Calculates the number of criteria met according to the PERC (Pulmonary Embolism Rule-out Criteria) Rule for Pulmonary Embolism. The calculation uses the patient's medical values and health status at the time of initial hospital admission, prior to any treatment.",
     "inputs": [
         {
@@ -601,7 +601,7 @@ CALCULATOR_48 = {
 # "calculator_id": 8
 # "calculator_name": "Wells' Criteria for Pulmonary Embolism"
 CALCULATOR_8 = {
-    "name": "wells_criteria_for_pulmonary_embolism_score_calculation",
+    "name": "Wells' Criteria for Pulmonary Embolism Calculation",
     "description": "This process calculates the Wells' Criteria score for Pulmonary Embolism (PE) risk assessment based on patient clinical data at initial hospital admission prior to any treatment. The score is the sum of points assigned to seven clinical criteria.",
     "inputs": [
         {
@@ -881,7 +881,7 @@ CALCULATOR_8 = {
 # "calculator_id": 15,
 # "calculator_name": "Child-Pugh Score for Cirrhosis Mortality",
 CALCULATOR_15 = {
-    "name": "child_pugh_score_calculation",
+    "name": "Child-Pugh Score for Cirrhosis Mortality Calculation",
     "description": "This process calculates the Child-Pugh Score for a patient with cirrhosis based on five clinical criteria: total bilirubin, serum albumin, INR, ascites, and hepatic encephalopathy. The score is the sum of points assigned to each criterion and is used to assess the severity of liver disease and mortality risk.",
     "inputs": [
         {
